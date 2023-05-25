@@ -53,6 +53,12 @@ class Logger:
             self._logger.warning(msg)
         if is_print:
             self.print(msg, level='WARNING')
+    
+    def debug(self, msg, is_print=False):
+        if self._logger is not None:
+            self._logger.debug(msg)
+        if is_print:
+            self.print(msg, level='DEBUG')
 
     def exception(self, e, is_print=False):
         if self._logger is not None:
