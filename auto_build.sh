@@ -2,14 +2,15 @@
 
 pwd=$(pwd)
 src_dir="ibasis"
-dst_dir="ibasis_funcs"
+dst_dir="ibasis/ibasisF"
 
 # 创建目标目录
+rm -rf "$dst_dir"
 mkdir -p "$dst_dir"
 cd "$dst_dir"
 
 # 遍历 a/ 目录下的所有文件（除了 __init__.py）
-for file in "../$src_dir"/*.py; do
+for file in "../../$src_dir"/*.py; do
     # 排除 __init__.py 文件
     if [[ $(basename "$file") != "__init__.py" ]]; then
         # 检查是否已经链接过
@@ -20,15 +21,16 @@ for file in "../$src_dir"/*.py; do
     fi
 done
 
-cd "$pwd"
 
 # 遍历目标目录中的所有 .py 文件py
-for file in "$dst_dir"/*.py; do
+for file in ./*.py; do
     # 获取文件名（不包括路径和后缀）
     filename=$(basename "$file" .py)
     # 将 import 语句写入 __init__.py 文件
-    echo "from .$filename import *" >> "$dst_dir/__init__.py"
+    echo "from .$filename import *" >> "./__init__.py"
 done
+
+cd "$pwd"
 
 version=$(grep -oP "version='\K[^']+" setup.py)
 
