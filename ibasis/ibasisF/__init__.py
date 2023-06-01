@@ -1,3 +1,4 @@
+from .iaffine import *
 from .ibasic import *
 from .icolor import *
 from .idraw import *

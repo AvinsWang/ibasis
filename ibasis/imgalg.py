@@ -3,7 +3,9 @@ import math
 import traceback
 import numpy as np
 from scipy.spatial import ConvexHull
-from .imath import (to_norm_vec, is_vec_eq, calc_eula_dis, cos2x)
+
+from . import imath
+from . import ipoint
 
 
 def calc_polygon_main_direction(polygon):
@@ -148,3 +150,43 @@ def get_rotate_rect_info(rotate_rect):
     W = calc_eula_dis(rb, lb)
     H = calc_eula_dis(lb, lt)
     return W, H, deg
+
+
+def rotate_2D_pts(pts, M):
+    """二维坐标点右乘旋转矩阵->得到变换后的点
+
+    Args:
+        pts (np.array): [[x, y], ...]
+        M (np.array, 2x3): 旋转矩阵, cv2.getRotationMatrix2D()得到
+
+    Returns:
+        np.array: 旋转后的点
+    """
+    homo_pts = np.concatenate([pts, np.ones([pts.shape[0], 1])], -1)
+    return (M[:2] @ homo_pts.T).T
+
+
+def sort_rrect_with_deg(rrect, deg):
+    """将旋转矩形的四个点根据旋转角进行排序
+
+    Args:
+        rrect (np.array): 旋转矩形的四个点
+        deg (float): [0, 360), 注: cv2中是逆时针旋转
+
+    Returns:
+        np.array: 排序后的旋转矩形的四个点, [lt, rt, rb, lb]
+    """
+    rrect = np.array(rrect, dtype=np.float32)
+    center = rrect.mean(axis=0)
+    
+    M = cv2.getRotationMatrix2D(center, deg, 1.0)
+    
+    r_rrect = rotate_2D_pts(rrect, M).astype(np.int32)
+    r_rrect_dic = {pt: i for i, pt in enumerate(ipoint.fmt_2d_pts(r_rrect, is_tuple=True, is_int=True))}
+    order_r_rrect = sort_rotate_rect(r_rrect, error=1)
+    ordered_rrect = np.array([rrect[r_rrect_dic[p]] for p in order_r_rrect], dtype=np.int32)
+    
+    wh = np.array([calc_eula_dis(ordered_rrect[0], ordered_rrect[1]), 
+                    calc_eula_dis(ordered_rrect[1], ordered_rrect[2])])
+
+    return ordered_rrect, wh.astype(np.int32)
