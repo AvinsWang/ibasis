@@ -7,7 +7,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 setup(
     name='ibasis',
-    version='0.0.1a0',
+    version='0.0.2',
     author='Avins Wang',
     author_email='avinswang@gmail.com',
     url='https://github.com/AvinsWang/ibasis',

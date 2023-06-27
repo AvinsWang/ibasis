@@ -310,7 +310,7 @@ def get_dataset_pair(dir1, dir2, file_type1=None, file_type2=None, key_mode1=0, 
     print('dir2:', dir2)
     img_path_dic = get_paths(dir1, file_type=file_type1, key_mode=key_mode1, stem_append=stem_append1)
     lbl_path_dic = get_paths(dir2, file_type=file_type2, key_mode=key_mode2, stem_append=stem_append2)
-    inter_keys = basic.get_intersection_keys(img_path_dic, lbl_path_dic, is_sort=is_sort)
+    inter_keys = ibasic.get_intersection_keys(img_path_dic, lbl_path_dic, is_sort=is_sort)
     if is_lis:
         return [[k, img_path_dic[k], lbl_path_dic[k]] for k in inter_keys]
     else:

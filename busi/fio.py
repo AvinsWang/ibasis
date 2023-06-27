@@ -298,13 +298,13 @@ def read_visual_select_file(fpath, key_mode='name'):
         s_split = line.split(',')
         if len(s_split) != 2:
             continue
-        key = s_split[0]
+        key, cate = s_split
         if key_mode == 'name':
             key = osp.basename(key)
-        if 'FILTER' in s_split[-1]:
-            filtered_dic[key] = s_split[-1]
-        if 'SELECTED' in s_split[-1]:
-            selected_dic[key] = s_split[-1]
+        if 'FILTER' == cate:
+            filtered_dic[key] = cate
+        elif 'SELECTED' == cate:
+            selected_dic[key] = cate
     return selected_dic, filtered_dic
 
 

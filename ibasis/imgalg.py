@@ -69,10 +69,10 @@ def sort_rotate_rect(pts, error=0.01):
         r1_pt = x_right_lis[r]
         l2_pt = x_left_lis[1-l]
         r2_pt = x_right_lis[1-r]
-        v1 = to_norm_vec(r2_pt - l1_pt)
-        v2 = to_norm_vec(r1_pt - l2_pt)
+        v1 = imath.to_norm_vec(r2_pt - l1_pt)
+        v2 = imath.to_norm_vec(r1_pt - l2_pt)
         # 四边形需要修改此处
-        if is_vec_eq(v1, v2, error):
+        if imath.is_vec_eq(v1, v2, error):
             matched = [[l, r], [1-l, 1-r]]
             break
     # 找出lb点
@@ -82,7 +82,7 @@ def sort_rotate_rect(pts, error=0.01):
     # 确定所有点的顺序
     sorted_pts = list()
     for l, r in matched:
-        if is_vec_eq(x_left_lis[l], ld):
+        if imath.is_vec_eq(x_left_lis[l], ld):
             sorted_pts = [
                 x_left_lis[1-l],
                 x_right_lis[r],
@@ -147,8 +147,8 @@ def get_rotate_rect_info(rotate_rect):
     v_lbrb = rb-lb
     deg = math.degrees(math.acos(cos2x(v_lbrb)))   # 与y轴正方向夹角
     # deg = 90 - deg
-    W = calc_eula_dis(rb, lb)
-    H = calc_eula_dis(lb, lt)
+    W = imath.calc_eula_dis(rb, lb)
+    H = imath.calc_eula_dis(lb, lt)
     return W, H, deg
 
 
@@ -186,7 +186,7 @@ def sort_rrect_with_deg(rrect, deg):
     order_r_rrect = sort_rotate_rect(r_rrect, error=1)
     ordered_rrect = np.array([rrect[r_rrect_dic[p]] for p in order_r_rrect], dtype=np.int32)
     
-    wh = np.array([calc_eula_dis(ordered_rrect[0], ordered_rrect[1]), 
-                    calc_eula_dis(ordered_rrect[1], ordered_rrect[2])])
+    wh = np.array([imath.calc_eula_dis(ordered_rrect[0], ordered_rrect[1]), 
+                    imath.calc_eula_dis(ordered_rrect[1], ordered_rrect[2])])
 
     return ordered_rrect, wh.astype(np.int32)
