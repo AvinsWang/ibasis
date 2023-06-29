@@ -2,15 +2,27 @@ import numpy as np
 import torch
 
 
-def parse_img_from_tensor(tensor, idx=None, ipt_fmt='NCHW', ipt_type='float', opt_fmt='HWC', opt_type='uint8', mean=None, std_var=None):
-    """Get cv2 image from tensor
+def parse_img_from_tensor(tensor,
+                          idx=None, 
+                          ipt_fmt='NCHW', 
+                          ipt_type='float',
+                          ipt_space='rgb',
+                          opt_fmt='HWC', 
+                          opt_type='uint8', 
+                          opt_space='rgb',
+                          mean=None, 
+                          std_var=None,
+                        ):
+    """Get image from tensor
     Args:
-        tensor (torch.Tensor): inpurt tensor 
+        tensor (torch.Tensor): input tensor 
         idx (int, optional): index. Defaults to None. None mean get all
         ipt_fmt (str, optional): input format. Defaults to 'NCHW'
-        ipt_type (str, optional): inpurt type. Defaults to float[0~1] or uint8
+        ipt_type (str, optional): input type. Defaults to float[0~1] or uint8
+        ipt_space (str, optional): input image color space
         opt_fmt (str, optional): output format. Defaults to 'HWC'
         opt_type (str, optional): output type. Defaults to 'uint8'
+        opt_space (str, optional): output image color space
         mean (np.arr, optional): mean, length should map with input,
             e.g. input is NCHW, or CHW (c! = 1), mean should be: [v1, v2, v3]
             e.g. input is NCHW, or CHW (c == 1) or C NOT IN input, mean = [v1]
@@ -23,7 +35,8 @@ def parse_img_from_tensor(tensor, idx=None, ipt_fmt='NCHW', ipt_type='float', op
     else:
         array = tensor
     
-    is_convert_value = ipt_type != opt_type
+    is_convert_value = ipt_type.lower() != opt_type.lower()
+    is_convert_space = ipt_space.lower() != opt_space.lower()
     
     if ipt_fmt.startswith('N'):         # ['NCHW', 'NHW', 'NHWC']
         arr_lis = [array[i] for i in range(len(array))]
@@ -61,6 +74,8 @@ def parse_img_from_tensor(tensor, idx=None, ipt_fmt='NCHW', ipt_type='float', op
             if mean is not None:
                 arr += mean
             arr = np.clip(arr, 0, 255)
+        if is_convert_space:
+            arr = arr[..., ::-1].copy()
         if 'uint8' in opt_type:
             # use: arr = arr.astype(arr) get ERROR
             # img = cv2.polylines(img, [coords], 1, color, 1)
