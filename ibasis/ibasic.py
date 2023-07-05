@@ -13,7 +13,7 @@ def get_dic_item(dic, idx):
         warnings.warn(f"The index {idx} is out of dict length {len(dic)}")
     for i, (k, v) in enumerate(dic.items()):
         if i == idx:
-            return k,v
+            return k, v
 
 
 def separate_lis(lis):

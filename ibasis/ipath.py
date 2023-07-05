@@ -124,6 +124,7 @@ def make_dirs(dir_, exist_ok=True):
     if dir_ is not None:
         os.makedirs(dir_, exist_ok=exist_ok)
 
+
 def is_path_like(uri):
     sp_l = osp.split(uri)
     if '.' in sp_l[-1]:
@@ -369,10 +370,12 @@ def pretty_print_dir(dir_, is_count_file=False):
     for path in paths:
         print(path.displayable())
 
+
 def change_path_suffix(path, suffix):
     if not suffix.startswith('.'):
         suffix = '.'+suffix
     return f"{osp.splitext(path)[0]}{suffix}"
+
 
 # === test func ===
 def __test_get_stem():

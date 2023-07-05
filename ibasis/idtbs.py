@@ -1,9 +1,20 @@
 import os
 import os.path as osp
+from loguru import logger
+
+from ibasis import ipath
+from ibasis import ibasic
 
 
 class DataDir:
-    def __init__(self, pdir=None, img_dir=None, lbl_dir=None, msk_dir=None, list_dir=None, vis_dir=None, show_list_dir=None):
+    def __init__(self,
+                 pdir=None,
+                 img_dir=None,
+                 lbl_dir=None,
+                 msk_dir=None,
+                 list_dir=None,
+                 vis_dir=None,
+                 ):
         """
         Args:
             pdir: parent dir
@@ -12,14 +23,12 @@ class DataDir:
             msk_dir: mask_dir
             list_dir: list file dir
             vis_dir: dir to save image which draw label
-            show_list_dir: list file for display vis image with Simple Image Classification Tool
         # dir tree
         pdir
         |-- images
         |-- labels
         |-- lists
         |-- masks
-        |-- show_lists
         `-- vis
         """
         self.pdir = pdir
@@ -28,13 +37,12 @@ class DataDir:
         self.msk_dir = msk_dir
         self.list_dir = list_dir
         self.vis_dir = vis_dir
-        self.show_list_dir = show_list_dir
 
     def _get_attr(self, name):
         if hasattr(self, name):
             return self.__getattribute__(name)
         else:
-            print(f"输入的属性不存在: {name}")
+            logger.error(f"输入的属性不存在: {name}")
             return None
 
     def _get_all_attr(self, include_kw=None, exclude_kw=None):
@@ -46,15 +54,19 @@ class DataDir:
             attrs = [attr for attr in attrs if exclude_kw not in attr]
         return attrs
 
-    def makedirs(self, name='__ALL__'):
-        if name == '__ALL__':
-            attrs = self._get_all_attr()
-            for attr in attrs:
-                attr_v = self._get_attr(attr)
-                if type(attr_v) == str and ('path' in attr or 'dir' in attr):
-                    if not osp.exists(attr_v):
-                        os.makedirs(attr_v, exist_ok=True)
-                        print(f"成功创建目录{attr}={attr_v}")
+    def _get_all_routes(self):
+        attrs = sorted(self._get_all_attr())
+        for attr in attrs:
+            attr_v = self._get_attr(attr)
+            if type(attr_v) == str and attr.endswith(('path', 'dir')):
+                yield (attr, attr_v)
+
+    def makedirs(self, name='ALL'):
+        if name == 'ALL':
+            for attr, attr_v in self._get_all_routes():
+                if not osp.exists(attr_v):
+                    os.makedirs(attr_v, exist_ok=True)
+                    logger.debug(f"成功创建目录{attr}={attr_v}")
         else:
             _dir = self._get_attr(name)
             if _dir is not None:
@@ -88,9 +100,8 @@ class DataDir:
             self.img_dir = osp.join(pdir, 'images')
             self.lbl_dir = osp.join(pdir, 'labels')
             self.msk_dir = osp.join(pdir, 'masks')
-            self.vis_dir = osp.join(pdir, 'vis')
             self.list_dir = osp.join(pdir, 'lists')
-            self.show_list_dir = osp.join(pdir, 'show_lists')
+            self.vis_dir = osp.join(pdir, 'vis')
         return self
 
     def rel(self, *, name='img_dir', path=None):
@@ -112,7 +123,7 @@ class DataDir:
                         _pir += '/'
                     return _dir.replace(self.pdir, '', 1)
                 else:
-                    print('父目录为None, 无法得到相对路径!')
+                    logger.warning('父目录为None, 无法得到相对路径!')
         else:
             _dir = self._get_attr(name)
             if _dir is not None:
@@ -141,14 +152,101 @@ class DataDir:
             return all(state.values())
         else:
             is_exists = self._check_exists(name)
-            print(f"{name}: {is_exists}")
+            logger.debug(f"{name}: {is_exists}")
             return is_exists
 
     def __str__(self):
-        # TODO auto str attr
-        return f"img_dir: {self.img_dir}\n" \
-               f"lbl_dir: {self.lbl_dir}\n" \
-               f"msk_dir: {self.msk_dir}\n" \
-               f"vis_dir: {self.vis_dir}\n" \
-               f"list_dir: {self.list_dir}\n" \
-               f"show_list_dir: {self.show_list_dir}"
+        lis = list()
+        for attr, attr_v in sorted(self._get_all_routes(), key=lambda x: len(x[0])):
+            prefix = 'd'
+            if 'path' in attr:
+                prefix = '-'
+            lis.append(f"{prefix} [{attr}] {osp.exists(attr_v)} {attr_v}")
+        return '\n'.join(lis)
+
+
+class DataDirDT(DataDir):
+    def __init__(self,
+                 pdir=None,
+                 img_dir=None,
+                 lbl_dir=None,
+                 msk_dir=None,
+                 list_dir=None,
+                 vis_dir=None,
+                 img_key_mode=2,
+                 lbl_key_mode=2,
+                 img_file_type='IMAGE',
+                 lbl_file_type='.json',
+                 img_stem_append=None,
+                 lbl_stem_append=None,
+                 ):
+        super(DataDirDT, self).__init__(pdir,
+                                        img_dir,
+                                        lbl_dir,
+                                        msk_dir,
+                                        list_dir,
+                                        vis_dir,
+                                        )
+        self.img_file_type = img_file_type
+        self.lbl_file_type = lbl_file_type
+        self.img_key_mode = img_key_mode
+        self.lbl_key_mode = lbl_key_mode
+        self.img_stem_append = img_stem_append
+        self.lbl_stem_append = lbl_stem_append
+
+    def init_bef_call_methods(self):
+        self.img_path_dic = ipath.get_paths(self.img_dir, file_type=self.img_file_type, 
+                                            key_mode=self.key_mode, stem_append=self.img_stem_append)
+        self.lbl_path_dic = ipath.get_paths(self.lbl_dir, file_type=self.lbl_file_type, 
+                                            key_mode=self.key_mode, stem_append=self.lbl_stem_append)
+        self.inter_keys = sorted(list(ibasic.get_intersection_keys(self.img_path_dic, self.lbl_path_dic)))
+        self.img_num = len(self.img_path_dic)
+        self.lbl_num = len(self.lbl_path_dic)
+        self.inter_num = len(self.inter_keys)
+        logger.info(f"Image num:{self.img_num}, Label num:{self.lbl_num}, Inter num:{self.inter_num}")
+
+    def __iter__(self):
+        for key in self.inter_keys:
+            yield [key, self.img_path_dic.get(key), self.lbl_path_dic.get(key)]
+
+    def __len__(self):
+        return (self.img_num, self.lbl_num, self.inter_num)
+
+    def _is_idx_fine(self, idx):
+        if idx >= self.inter_num:
+            raise IndexError(f"Input idx({idx}) should < length ({self.inter_num})")
+
+    def get_data_pair(self, idx_or_key):
+        if isinstance(idx_or_key, int):
+            return (self.inter_keys[idx_or_key], 
+                    self.img_path_dic[self.inter_keys[idx_or_key]], 
+                    self.lbl_path_dic[self.inter_keys[idx_or_key]])
+        elif isinstance(idx_or_key, str):
+            if idx_or_key in self.inter_keys:
+                return (idx_or_key, self.img_path_dic[idx_or_key], self.lbl_path_dic[idx_or_key])
+        else:
+            logger.warning(f"{idx_or_key} not in inter_keys, 返回None")
+            return (None, None, None)
+
+
+class TestUnit():
+    def __init__(self):
+        self.pdir = 'tmp'
+
+    def test_data_dir(self):
+        dd = DataDir().init_pdir(self.pdir)
+        dd.add_attr(test_dir=dd.join(name='pdir', path='test'))
+        dd.add_attr(test_path=dd.join(name='pdir', path='test.txt'))
+        print(dd)
+
+    def test_data_dirDT(self):
+        dd = DataDir().init_pdir(self.pdir)
+        dd.add_attr(test_dir=dd.join(name='pdir', path='test'))
+        dd.add_attr(test_path=dd.join(name='pdir', path='test.txt'))
+        print(dd)
+
+
+if __name__ == "__main__":
+    tu = TestUnit()
+    tu.test_data_dir()
+    tu.test_data_dirDT()

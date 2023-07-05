@@ -1,3 +1,4 @@
+import warnings
 from ibasis import ibasisF as base
 from ibasis import (ipath, icolor, ipoint, imgalg)
 
